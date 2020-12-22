@@ -22,10 +22,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>{
 	      + "where ((r.arrivalDate < ?1 and ?2 < r.departureDate) "
 	      + "or (?1 < r.departureDate and r.departureDate <= ?2) "
 	      + "or (?1 <= r.arrivalDate and r.arrivalDate <=?2)) "
-	      + "and r.status = 'ACTIVE' "
+	      + "and r.status = 'ACTIVE' and r.members + ?3 >= ?4 "
 	      + "order by r.arrivalDate asc")
-	List<Reservation> findForReservedDateRanges(LocalDate startDate, LocalDate endDate);
+	List<Reservation> findForReservedDateRanges(LocalDate arrivalDate, LocalDate departureDate, Integer members, Integer maxCampCapacity);
 
-	Optional<Reservation> findByBookingIdentifier(Long bookingId);
+	Optional<Reservation> findById(Long bookingId);
 
 }

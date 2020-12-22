@@ -24,9 +24,6 @@ public class Reservation {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long id;
 	
-	@Column(name = "bookingIdentifier", nullable = false, unique = true)
-	private Long bookingIdentifier;
-	
 	@NotNull
 	private String email;
 	
@@ -42,8 +39,7 @@ public class Reservation {
 	@NotNull
 	private int members;
 	
-	@Column(columnDefinition = "varchar(10) default 'ACTIVE'")
-	private String status;
+	private String status="ACTIVE";
 	
 	@CreationTimestamp
 	private LocalDate createdAt;
@@ -115,14 +111,6 @@ public class Reservation {
 		this.updatedAt = updatedAt;
 	}
 	
-	public Long getBookingIdentifier() {
-		return bookingIdentifier;
-	}
-
-	public void setBookingIdentifier(Long bookingIdentifier) {
-		this.bookingIdentifier = bookingIdentifier;
-	}
-
 	public String getStatus() {
 		return status;
 	}
@@ -140,7 +128,7 @@ public class Reservation {
 
 	@Override
 	public String toString() {
-		return "Reservation [id=" + id + ", bookingIdentifier=" + bookingIdentifier + ", email=" + email + ", fullName="
+		return "Reservation [id=" + id + ", email=" + email + ", fullName="
 				+ fullName + ", arrivalDate=" + arrivalDate + ", departureDate=" + departureDate + ", members="
 				+ members + ", status=" + status + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
 	}

@@ -1,6 +1,7 @@
 package com.challenge.campsitereservationapi.service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -8,6 +9,7 @@ import java.util.stream.Collectors;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.challenge.campsitereservationapi.exception.DateNotAvailableException;
@@ -19,56 +21,71 @@ import com.challenge.campsitereservationapi.repository.ReservationRepository;
 @Service
 @Transactional
 public class ReservationServiceImpl implements ReservationService{
+	
+	@Value("${campsite.max.reservedDays}")
+	private Integer maxReservdays;
+	
+	@Value("${campsite.max.advanceBookingMonths}")
+	private Integer maxAdvanceBooking;
+	
+	@Value("${campsite.max.capacity}")
+	private Integer maxCampCapacity;
 
 	@Autowired
 	private ReservationRepository reservationRepository;
 	
 	@Override
-	public List<LocalDate> findAvailableDates(LocalDate startDate, LocalDate endDate) {
-
-    if(!validateDates(startDate,endDate)) {
-		return null;
-    }
-    List<LocalDate> availableDatesBetween = startDate.datesUntil(endDate.plusDays(1))
+	public List<LocalDate> findAvailableDates(LocalDate arrivalDate, LocalDate departureDate,Integer members) {
+		
+    List<LocalDate> availableDatesBetween = arrivalDate.datesUntil(departureDate.plusDays(1))
                                             .collect(Collectors.toList());
-        List<Reservation> reservations = reservationRepository.findForReservedDateRanges(startDate, endDate);
-        reservations.forEach(r -> availableDatesBetween.removeAll(r.getReservedDates()));
+        List<Reservation> reservations = reservationRepository.findForReservedDateRanges(arrivalDate, departureDate,members,maxCampCapacity);
+        reservations.forEach(r->availableDatesBetween.removeAll(r.getReservedDates()));
         return availableDatesBetween;
 	
 	}
 
 	@Override
 	public Reservation findReservationByBookingIdentifier(Long bookingId) {
-		Optional<Reservation> reservation = reservationRepository.findByBookingIdentifier(bookingId);
+		Optional<Reservation> reservation = reservationRepository.findById(bookingId);
 	    if (reservation.isEmpty()) {
-	      throw new ReservationNotFoundException("Reservation Not Found");
+	    	String message = String.format("Reservation Not Found with bookingId: %d",bookingId);
+	      throw new ReservationNotFoundException(message);
 	    }
 	    return reservation.get();
 	}
 
 	@Override
 	public Reservation createReservation(Reservation reservation) {
-		 List<LocalDate> availableDays = findAvailableDates(reservation.getArrivalDate(), reservation.getDepartureDate());
+		 if(!validateDates(reservation.getArrivalDate(),reservation.getDepartureDate())) {
+				return null;
+		    }
+		 List<LocalDate> availableDays = findAvailableDates(reservation.getArrivalDate(), reservation.getDepartureDate(),reservation.getMembers());
 
 		    if (!availableDays.containsAll(reservation.getReservedDates())) {
-		      String message = String.format("Dates not available from %s to %s",
-		    		  reservation.getArrivalDate(), reservation.getDepartureDate());
+				
+				 String message = String.format("Campsite not available from %s to %s",
+				 reservation.getArrivalDate(), reservation.getDepartureDate());
+				 
 		      throw new DateNotAvailableException(message);
 		    }
 		    return reservationRepository.save(reservation);
 	}
 
 	@Override
-	public Reservation updateReservation(Reservation reservation) {
-		Reservation oldReservation=findReservationByBookingIdentifier(reservation.getBookingIdentifier());
+	public Reservation updateReservation(Long id,Reservation reservation) {
+		Reservation oldReservation=findReservationByBookingIdentifier(id);
 		 if (!oldReservation.getStatus().equalsIgnoreCase("ACTIVE")) {
-		      String message = String.format("Reservation with booking identifier=%s is either cancelled or inactive", reservation.getBookingIdentifier());
+		      String message = String.format("Reservation with booking identifier=%s is either cancelled or inactive", id);
 		      throw new InactiveBookingException(message);
 		    }
-		 List<LocalDate> availableDays = findAvailableDates(reservation.getArrivalDate(), reservation.getDepartureDate());
+		 if(!validateDates(reservation.getArrivalDate(),reservation.getDepartureDate())) {
+				return null;
+		    }
+		 List<LocalDate> availableDays = findAvailableDates(reservation.getArrivalDate(), reservation.getDepartureDate(),reservation.getMembers());
 
 		    if (!availableDays.containsAll(reservation.getReservedDates())) {
-		      String message = String.format("Dates not available from %s to %s",
+		      String message = String.format("Campsite not available from %s to %s",
 		    		  reservation.getArrivalDate(), reservation.getDepartureDate());
 		      throw new DateNotAvailableException(message);
 		    }
@@ -87,16 +104,24 @@ public class ReservationServiceImpl implements ReservationService{
 	    reservationRepository.delete(reservation);
 	    }
 
-	private boolean validateDates(LocalDate startDate, LocalDate endDate) {
+	private boolean validateDates(LocalDate arrivaldate, LocalDate departureDate) {
+		LocalDate currentDate = LocalDate.now();
 		
-	LocalDate currentDate = LocalDate.now();
-	if(!startDate.isAfter(currentDate)) 
-		throw new IllegalArgumentException("Start Date must be after current date");
-	if(!endDate.isAfter(currentDate))
-		throw new IllegalArgumentException("End Date must be after current date");
-	if(!startDate.isEqual(endDate) || !startDate.isBefore(endDate))
-	    throw new IllegalArgumentException( "End date must be equal to start date or greater than start date");
-		
+		if(arrivaldate.isBefore(currentDate)) 
+			throw new IllegalArgumentException("Arrival date must be after current date");
+		if(departureDate.isBefore(currentDate))
+			throw new IllegalArgumentException("Departure date must be after current date");
+		if(arrivaldate.isAfter(departureDate))
+		    throw new IllegalArgumentException( "Departure date must be equal to arrival date or greater than arrival date");
+
+		if(ChronoUnit.DAYS.between(arrivaldate,departureDate)>maxReservdays) {
+			String message = String.format("Campsite cannot be reserved for more than %d days",maxReservdays);				 
+			      throw new DateNotAvailableException(message);
+		}
+		if(ChronoUnit.MONTHS.between(currentDate,arrivaldate)>maxAdvanceBooking) {
+			String message = String.format("Campsite can be reserved only %d month in advance",maxAdvanceBooking);				 
+			      throw new DateNotAvailableException(message);
+		}		
 	return true;
 	}
 }
