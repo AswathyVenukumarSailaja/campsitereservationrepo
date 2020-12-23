@@ -7,7 +7,7 @@ import com.challenge.campsitereservationapi.model.Reservation;
 
 public interface ReservationService {
 
-	  List<LocalDate> findAvailableDates(LocalDate startDate, LocalDate endDate,Integer members);
+	  List<LocalDate> findAvailableDates(LocalDate startDate, LocalDate endDate,Long members);
 
 	  Reservation findReservationByBookingIdentifier(Long bookingId);
 

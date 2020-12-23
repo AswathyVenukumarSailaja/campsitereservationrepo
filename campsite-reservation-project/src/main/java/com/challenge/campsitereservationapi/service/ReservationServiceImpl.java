@@ -22,6 +22,7 @@ import com.challenge.campsitereservationapi.repository.ReservationRepository;
 @Transactional
 public class ReservationServiceImpl implements ReservationService{
 	
+
 	@Value("${campsite.max.reservedDays}")
 	private Integer maxReservdays;
 	
@@ -29,20 +30,28 @@ public class ReservationServiceImpl implements ReservationService{
 	private Integer maxAdvanceBooking;
 	
 	@Value("${campsite.max.capacity}")
-	private Integer maxCampCapacity;
+	private Long maxCampCapacity;
 
 	@Autowired
 	private ReservationRepository reservationRepository;
 	
 	@Override
-	public List<LocalDate> findAvailableDates(LocalDate arrivalDate, LocalDate departureDate,Integer members) {
+	public List<LocalDate> findAvailableDates(LocalDate arrivalDate, LocalDate departureDate,Long members) {
 		
     List<LocalDate> availableDatesBetween = arrivalDate.datesUntil(departureDate.plusDays(1))
                                             .collect(Collectors.toList());
-        List<Reservation> reservations = reservationRepository.findForReservedDateRanges(arrivalDate, departureDate,members,maxCampCapacity);
-        reservations.forEach(r->availableDatesBetween.removeAll(r.getReservedDates()));
+        //List<Reservation> reservations = reservationRepository.findForReservedDateRanges(arrivalDate, departureDate,members,maxCampCapacity);
+        //reservations.forEach(r->availableDatesBetween.removeAll(r.getReservedDates()));
+    
+    List<Object[]> reservations = reservationRepository.findForBookedDateRanges(arrivalDate, departureDate,members,maxCampCapacity);
+    for (int i=0; i< reservations.size(); i++){
+    	Object[] res=reservations.get(i);
+    	LocalDate resArrivalDate=(LocalDate) res[0];
+    	LocalDate resDepartureDate=(LocalDate) res[1];
+    	List<LocalDate> reservedDates=resArrivalDate.datesUntil(resDepartureDate).collect(Collectors.toList());
+    	availableDatesBetween.removeAll(reservedDates);
+    }
         return availableDatesBetween;
-	
 	}
 
 	@Override
@@ -60,7 +69,7 @@ public class ReservationServiceImpl implements ReservationService{
 		 if(!validateDates(reservation.getArrivalDate(),reservation.getDepartureDate())) {
 				return null;
 		    }
-		 List<LocalDate> availableDays = findAvailableDates(reservation.getArrivalDate(), reservation.getDepartureDate(),reservation.getMembers());
+		 List<LocalDate> availableDays = findAvailableDates(reservation.getArrivalDate(), reservation.getDepartureDate(),(long) reservation.getMembers());
 
 		    if (!availableDays.containsAll(reservation.getReservedDates())) {
 				
@@ -82,7 +91,7 @@ public class ReservationServiceImpl implements ReservationService{
 		 if(!validateDates(reservation.getArrivalDate(),reservation.getDepartureDate())) {
 				return null;
 		    }
-		 List<LocalDate> availableDays = findAvailableDates(reservation.getArrivalDate(), reservation.getDepartureDate(),reservation.getMembers());
+		 List<LocalDate> availableDays = findAvailableDates(reservation.getArrivalDate(), reservation.getDepartureDate(),(long) reservation.getMembers());
 
 		    if (!availableDays.containsAll(reservation.getReservedDates())) {
 		      String message = String.format("Campsite not available from %s to %s",

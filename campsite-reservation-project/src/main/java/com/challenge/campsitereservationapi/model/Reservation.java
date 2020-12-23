@@ -45,7 +45,7 @@ public class Reservation {
 	private LocalDate createdAt;
 	
 	@CreationTimestamp
-	private LocalDate updatedAt;
+	private LocalDate updatedAt; 
 
 	public Long getId() {
 		return id;

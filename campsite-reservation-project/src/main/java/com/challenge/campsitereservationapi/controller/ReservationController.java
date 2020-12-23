@@ -40,12 +40,13 @@ public class ReservationController {
 		this.reservationService = reservationService;
 	}
 	
-	@GetMapping(value = "/availableDates", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/availabilityCheck/{members}", produces = MediaType.APPLICATION_JSON_VALUE)
 	  public ResponseEntity<List<LocalDate>> getAvailableDates(
 	      @RequestParam(name = "arrival_date", required = false)
 	      @DateTimeFormat(iso = ISO.DATE) LocalDate arrivalDate,
 	      @RequestParam(name = "departure_date", required = false)
-	      @DateTimeFormat(iso = ISO.DATE) LocalDate departureDate) {
+	      @DateTimeFormat(iso = ISO.DATE) LocalDate departureDate,
+	      @PathVariable() Long members) {
 
 	    if (arrivalDate == null) {
 	    	arrivalDate = LocalDate.now().plusDays(1);
@@ -53,11 +54,11 @@ public class ReservationController {
 	    if (departureDate == null) {
 	    	departureDate = arrivalDate.plusMonths(maxAdvanceBooking);
 	    }
-	    List<LocalDate> availableDates = reservationService.findAvailableDates(arrivalDate, departureDate,0);
+	    List<LocalDate> availableDates = reservationService.findAvailableDates(arrivalDate, departureDate,members);
 	    return new ResponseEntity<>(availableDates, HttpStatus.OK);
 	  }
 
-	 @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+	 @GetMapping(value = "/checkReservationDetails/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	  public ResponseEntity<Object> getBooking(@PathVariable() Long id) {
          try {
 		 Reservation reservation = reservationService.findReservationByBookingIdentifier(id);
@@ -67,7 +68,7 @@ public class ReservationController {
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
          }
 	  }
-	 @PostMapping("/bookings")
+	 @PostMapping("/makeReservation")
 		public ResponseEntity<Object> createBooking(@RequestBody Reservation reservation) {
 			try {
 				Reservation result=reservationService.createReservation(reservation);
@@ -76,7 +77,7 @@ public class ReservationController {
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 			}
 		}
-	 @PutMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+	 @PutMapping(value = "/modifyReservation/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	  public ResponseEntity<Object> updateBooking(@PathVariable Long id, @RequestBody Reservation reservation) {
 
 		 try {
@@ -87,7 +88,7 @@ public class ReservationController {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 	         }
 	 	}
-	 @DeleteMapping("/{id}")
+	 @DeleteMapping("/cancelReservation/{id}")
 		public ResponseEntity<Object> cancelBooking(@PathVariable Long id) {
 			try {
 				reservationService.cancelReservation(id);
