@@ -68,5 +68,8 @@ Getting available dates,getting the reservation details,making reservation,updat
 #### Concurrency Testing
 Concurrency control is obtained by Pessimistic locking and Spring level transactional isolation annotation as Serializable.
 Tested using Apache Jmeter
-- Created a response body for posting a reservation.
+- Created a response body for posting a reservation detail with 3 members in it.
+- Set the thread count as 10 in order to test the concurrent access for available dates.
+- First 3 requests are processed and rest of the requests are failed.(since the maximum capacity is set as 10).
+* Screenshots attached.
 ![Screenshot](https://github.com/AswathyVenukumarSailaja/campsitereservationrepo/issues/1#issue-774207994)
