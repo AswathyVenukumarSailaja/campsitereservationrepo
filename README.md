@@ -36,5 +36,36 @@ date(s). Demonstrate with appropriate test cases that the system can gracefully 
 * IDE-Spring Tool Suite
 * H2 Embedded Database
 * Apache Tomcat Server
-* Postman
-* Apache JMeter
+* Postman(For API testing)
+* Apache JMeter(For Concurrency testing)
+
+## Configuration properties 
+Following properties are configured in appliation.properties file.
+
+* campsite.max.capacity (Maximum capacity of people in the campsite at a time.Default value set as 10.)
+* campsite.max.advanceBookingMonths (Advanced reservation possible in months.Also,the same value is taken while displaying the dates available for month.Default value set as 1.)
+* campsite.max.reservedDays (Maximum days reserving the campsite.Default value set as 3.)
+
+## Application Run steps
+1. git clone https://github.com/AswathyVenukumarSailaja/campsitereservationrepo.git
+2. cd campsitereservationrepo
+3. mvn spring-boot:run
+
+OR
+
+1. Download the source code from repository and import in IDE.
+2. Right click on project-->Run As-->Java Application
+
+## URL's to Access
+* http://localhost:8080/campsite/reservations/availabilityCheck/{members} 
+* http://localhost:8080/campsite/reservations//checkReservationDetails/{id}
+* http://localhost:8080/campsite/reservations/makeReservation
+* http://localhost:8080/campsite/reservations/modifyReservation/{id}
+* http://localhost:8080/campsite/reservations/cancelReservation/{id}
+
+## Testing
+Five API's(2 GET,1 POST,1 PUT,1 DELETE) are tested using Postman
+#### Concurrency Testing
+Concurrency control is obtained by Pessimistic locking and Spring level transactional isolation configuration as Serializable.
+Tested using Apache Jmeter
+- Created a response body for posting a reservation.
