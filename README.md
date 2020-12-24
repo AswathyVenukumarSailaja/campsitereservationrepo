@@ -64,8 +64,9 @@ OR
 * http://localhost:8080/campsite/reservations/cancelReservation/{id}
 
 ## Testing
-Five API's(2 GET,1 POST,1 PUT,1 DELETE) are tested using Postman
+Getting available dates,getting the reservation details,making reservation,updating reservation and cancelling reservations API's are tested using Postman
 #### Concurrency Testing
-Concurrency control is obtained by Pessimistic locking and Spring level transactional isolation configuration as Serializable.
+Concurrency control is obtained by Pessimistic locking and Spring level transactional isolation annotation as Serializable.
 Tested using Apache Jmeter
 - Created a response body for posting a reservation.
+![Screenshot](https://github.com/AswathyVenukumarSailaja/campsitereservationrepo/issues/1#issue-774207994)
